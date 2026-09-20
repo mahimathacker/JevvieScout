@@ -4,9 +4,9 @@ A lightweight outreach-signal demo powered by Jev. It helps founders, creators, 
 
 Each post receives a typed decision:
 
-- **DM** — strong, timely match
-- **Maybe** — relevant, but missing a clear opening
-- **Skip** — low-signal for the selected goal
+- **DM** - strong, timely match
+- **Maybe** - relevant, but missing a clear opening
+- **Skip** - low-signal for the selected goal
 
 The result also includes an opportunity type, fit score, confidence, and a short explanation.
 
