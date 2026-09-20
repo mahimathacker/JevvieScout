@@ -39,7 +39,9 @@ DM / Maybe / Skip + fit + confidence + reason
           Feed overlay
 ```
 
-The demo uses a local API route with deterministic sample classifications and simulated latency. In production, this route can call Jev for fast filtering. A larger LLM can then generate personalized outreach only for strong `DM` matches.
+The feed content is sample data, but every decision is produced by the real Jev API. The server sends all posts to Jev in one System One request, where typed Choice and Score questions evaluate the decision, opportunity type, fit, and reason. The UI displays Jev's confidence, measured API round-trip time, and per-post cost. If Jev does not return a billed cost, the UI estimates it from input-token usage at the public list price.
+
+A larger LLM can later generate personalized outreach only for strong `DM` matches.
 
 ## Tech stack
 
@@ -61,7 +63,24 @@ The demo uses a local API route with deterministic sample classifications and si
 npm install
 ```
 
-### 2. Start the development server
+### 2. Configure Jev
+
+Copy `.env.example` to `.env` and add your TypeSafe API key:
+
+```env
+TYPESAFE_API_KEY="your_api_key_here"
+```
+
+Optional overrides:
+
+```env
+TYPESAFE_MODEL="jev-latest"
+TYPESAFE_API_URL="https://api.typesafe.ai/v1/systemone"
+```
+
+The API key is only read by the server route and is never sent to the browser.
+
+### 3. Start the development server
 
 ```bash
 npm run dev
@@ -69,13 +88,13 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 3. Create a production build
+### 4. Create a production build
 
 ```bash
 npm run build
 ```
 
-### 4. Run the production build
+### 5. Run the production build
 
 ```bash
 npm start
@@ -92,15 +111,15 @@ npm run lint
 
 ```text
 app/
-├── api/classify/route.js  # Demo classification endpoint
+├── api/classify/route.js  # Server-side Jev integration
 ├── globals.css            # Complete visual system and responsive styles
 ├── layout.js              # Root layout and page metadata
 └── page.js                # Feed, goal selector, filters, and results UI
 ```
 
-## Connect a real classifier
+## Classification response
 
-Replace the sample logic in `app/api/classify/route.js` with a call to your classification service. The interface expects this response shape:
+The internal `/api/classify` route normalizes Jev's typed answers into the following UI shape:
 
 ```json
 {
@@ -114,7 +133,8 @@ Replace the sample logic in `app/api/classify/route.js` with a call to your clas
     }
   ],
   "latency": 206,
-  "cost": "0.00014"
+  "cost": "0.0000140",
+  "model": "jev-1.13.0"
 }
 ```
 

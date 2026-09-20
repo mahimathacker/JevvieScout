@@ -64,14 +64,6 @@ const posts = [
   },
 ];
 
-const seedResults = [
-  { decision: "DM", opportunity: "Event partnership", score: 96, confidence: 92, reason: "Actively seeking AI tooling partners for a relevant developer audience." },
-  { decision: "Maybe", opportunity: "Strategic partnership", score: 68, confidence: 81, reason: "Strong audience overlap, but there is no direct collaboration ask yet." },
-  { decision: "Skip", opportunity: "Product update", score: 22, confidence: 95, reason: "A shipping update without a clear partnership need or opening." },
-  { decision: "DM", opportunity: "Content partnership", score: 87, confidence: 89, reason: "Explicitly looking for practitioners to contribute to a founder-focused series." },
-  { decision: "Maybe", opportunity: "Community partnership", score: 64, confidence: 78, reason: "Their community is relevant, though the post is informational rather than an ask." },
-];
-
 function DecisionBadge({ value }) {
   return <span className={`decision decision-${value.toLowerCase()}`}><span className="decision-dot" />{value}</span>;
 }
@@ -149,19 +141,37 @@ function PostCard({ post, result, analyzing }) {
 
 export default function Home() {
   const [goal, setGoal] = useState("partnerships");
-  const [results, setResults] = useState(seedResults);
-  const [analyzing, setAnalyzing] = useState(false);
+  const [results, setResults] = useState([]);
+  const [analyzing, setAnalyzing] = useState(true);
+  const [apiError, setApiError] = useState("");
   const [filter, setFilter] = useState("All");
-  const [metrics, setMetrics] = useState({ latency: 206, cost: "0.00014" });
+  const [metrics, setMetrics] = useState({ latency: 0, cost: "0.0000000", batchCost: "0.0000000", costSource: "estimated", model: "jev-latest" });
 
   useEffect(() => {
     let live = true;
     async function classify() {
       setAnalyzing(true);
+      setApiError("");
       try {
-        const response = await fetch("/api/classify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ goal }) });
+        const response = await fetch("/api/classify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            goal,
+            posts: posts.map(({ name, role, text }) => ({ name, role, text })),
+          }),
+        });
         const data = await response.json();
-        if (live) { setResults(data.results); setMetrics({ latency: data.latency, cost: data.cost }); }
+        if (!response.ok) throw new Error(data.error || "Jev classification failed.");
+        if (live) {
+          setResults(data.results);
+          setMetrics({ latency: data.latency, cost: data.cost, batchCost: data.batchCost, costSource: data.costSource, model: data.model });
+        }
+      } catch (error) {
+        if (live) {
+          setResults([]);
+          setApiError(error.message || "Jev classification failed.");
+        }
       } finally {
         if (live) setAnalyzing(false);
       }
@@ -170,7 +180,7 @@ export default function Home() {
     return () => { live = false; };
   }, [goal]);
 
-  const visiblePosts = useMemo(() => posts.map((post, index) => ({ post, result: results[index] })).filter(({ result }) => filter === "All" || result?.decision === filter), [results, filter]);
+  const visiblePosts = useMemo(() => posts.map((post, index) => ({ post, result: results[index] })).filter(({ result }) => analyzing || filter === "All" || result?.decision === filter), [results, filter, analyzing]);
   const counts = useMemo(() => results.reduce((acc, item) => ({ ...acc, [item.decision]: (acc[item.decision] || 0) + 1 }), {}), [results]);
 
   return (
@@ -193,8 +203,9 @@ export default function Home() {
             <div className="filters">{["All", "DM", "Maybe", "Skip"].map((item) => <button key={item} className={filter === item ? "active" : ""} onClick={() => setFilter(item)}>{item}{item !== "All" && <span>{counts[item] || 0}</span>}</button>)}</div>
           </div>
           <div className="feed-list">
-            {visiblePosts.map(({ post, result }) => result && <PostCard key={post.handle} post={post} result={result} analyzing={analyzing} />)}
-            {!analyzing && visiblePosts.length === 0 && <div className="empty-state">No posts in this bucket. Try another filter.</div>}
+            {apiError && <div className="api-error"><strong>Jev couldn&apos;t analyze this feed.</strong><span>{apiError}</span></div>}
+            {!apiError && visiblePosts.map(({ post, result }) => <PostCard key={post.handle} post={post} result={result} analyzing={analyzing} />)}
+            {!analyzing && !apiError && visiblePosts.length === 0 && <div className="empty-state">No posts in this bucket. Try another filter.</div>}
           </div>
         </section>
 
@@ -212,12 +223,12 @@ export default function Home() {
 
           <section className="benchmark-card">
             <div className="aside-title"><span>JEV BENCHMARK</span><Zap size={16} /></div>
-            <p>Fast enough to score the feed before you finish a sip of coffee.</p>
+            <p>Live API timing and token-based cost for the current Jev call.</p>
             <div className="benchmark-grid">
-              <div><Clock3 size={18} /><strong>{metrics.latency}<small>ms</small></strong><span>avg. latency</span></div>
-              <div><CircleDollarSign size={18} /><strong>${metrics.cost}</strong><span>per post</span></div>
+              <div><Clock3 size={18} /><strong>{metrics.latency || "—"}{metrics.latency > 0 && <small>ms</small>}</strong><span>API round trip</span></div>
+              <div><CircleDollarSign size={18} /><strong>${metrics.cost}</strong><span>{metrics.costSource === "reported" ? "billed per post" : "est. per post"}</span></div>
             </div>
-            <div className="vs-row"><span>~38× cheaper</span><span>than a frontier LLM</span></div>
+            <div className="vs-row"><span>LIVE JEV API</span><span>{metrics.model}</span></div>
           </section>
 
           <section className="privacy-note"><Users size={18} /><div><strong>Your judgment, amplified.</strong><p>Jev prioritizes. You decide who gets a message.</p></div></section>
