@@ -1,0 +1,12 @@
+:root { --paper: #f2efe8; --card: #fbfaf6; --ink: #171917; --muted: #6c7068; --line: #d4d0c6; --blue: #254ee9; }
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; background: var(--paper); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+main { width: min(680px, calc(100% - 40px)); margin: 9vh auto; padding: 42px; background: var(--card); border: 1px solid var(--line); box-shadow: 7px 7px 0 var(--ink); }
+.eyebrow { color: var(--blue); font: 600 10px monospace; letter-spacing: .13em; }
+h1 { margin: 13px 0 10px; font: italic 48px/1 Georgia, serif; letter-spacing: -.03em; } p { color: var(--muted); font-size: 14px; line-height: 1.6; max-width: 560px; }
+label { display: flex; flex-direction: column; gap: 8px; margin-top: 32px; } label span { font: 600 9px monospace; letter-spacing: .1em; color: var(--muted); }
+input { border: 1px solid #bcb8ae; background: white; padding: 13px; font: 12px monospace; outline: none; } input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,78,233,.1); }
+.hint { color: #8a8c85; font-size: 10px; margin: 8px 0 18px; }
+button { border: 0; padding: 12px 18px; background: var(--ink); color: white; font-weight: 650; cursor: pointer; } button:hover { background: var(--blue); }
+#message { min-height: 20px; margin-top: 11px; color: var(--blue); font-size: 11px; }
+section { margin-top: 31px; padding-top: 22px; border-top: 1px solid var(--line); } section strong { font-size: 12px; } ul { padding-left: 18px; color: var(--muted); font-size: 11px; line-height: 1.8; }

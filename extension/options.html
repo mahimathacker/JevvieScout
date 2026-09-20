@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>JevvieScout settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <div class="eyebrow">JEVVIESCOUT SETTINGS</div>
+      <h1>Connect your scout.</h1>
+      <p>JevvieScout sends extracted post and profile text to your server-side classifier. Your X cookies and session are never included.</p>
+
+      <label>
+        <span>CLASSIFIER ENDPOINT</span>
+        <input id="endpoint" type="url" spellcheck="false" placeholder="http://localhost:3000/api/classify" />
+      </label>
+      <div class="hint">For local development, keep the Next.js app running on port 3000. HTTPS endpoints require a one-time browser permission.</div>
+
+      <button id="save" type="button">Save endpoint</button>
+      <div id="message" role="status"></div>
+
+      <section>
+        <strong>Privacy boundary</strong>
+        <ul>
+          <li>Reads only X content rendered in the current page.</li>
+          <li>Does not access, store, or transmit X authentication cookies.</li>
+          <li>Sends post text, public author identity, and visible profile context to your endpoint.</li>
+        </ul>
+      </section>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>

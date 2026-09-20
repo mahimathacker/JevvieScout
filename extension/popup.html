@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>JevvieScout</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <div class="mark">J</div>
+      <div><strong>JevvieScout</strong><span>Signal scout for X</span></div>
+      <label class="switch" title="Enable JevvieScout">
+        <input id="enabled" type="checkbox" />
+        <span></span>
+      </label>
+    </header>
+
+    <main>
+      <label class="field">
+        <span>MY OUTREACH GOAL</span>
+        <select id="goal">
+          <option value="partnerships">Find partnerships</option>
+          <option value="customers">Find customers</option>
+          <option value="hiring">Find opportunities</option>
+          <option value="creator">Creator collaborations</option>
+          <option value="discovery">Customer discovery</option>
+          <option value="networking">Networking</option>
+        </select>
+      </label>
+
+      <div class="status" id="status">
+        <span class="status-dot"></span>
+        <span id="statusText">Open X to start scouting.</span>
+      </div>
+
+      <button id="scan" class="primary" type="button">Scan visible posts <span>↗</span></button>
+    </main>
+
+    <footer><span>Visible page content only</span><button id="settings" type="button">Settings</button></footer>
+    <script src="popup.js"></script>
+  </body>
+</html>

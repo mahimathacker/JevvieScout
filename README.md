@@ -12,7 +12,7 @@ The result also includes an opportunity type, fit score, confidence, and a short
 
 ## Features
 
-- X-style sample feed
+- Animated 15-post scouting reel
 - Six outreach goals:
   - Find partnerships
   - Find customers
@@ -21,11 +21,12 @@ The result also includes an opportunity type, fit score, confidence, and a short
   - Customer discovery
   - Networking
 - Goal-specific classification results
-- DM, Maybe, and Skip filters
-- Expandable reasoning for each decision
-- Fit and confidence scores
-- Latency and estimated-cost benchmark panel
+- Playful DM, Maybe, and Skip sorting zones
+- Animated profile launches and accumulating avatar buckets
+- Compact opportunity and confidence verdicts
+- Collapsible live metrics drawer
 - Responsive desktop and mobile interface
+- JevvieScout Chrome/Edge extension for live X posts
 
 ## How it works
 
@@ -39,7 +40,7 @@ DM / Maybe / Skip + fit + confidence + reason
           Feed overlay
 ```
 
-The feed content is sample data, but every decision is produced by the real Jev API. The server sends all posts to Jev in one System One request, where typed Choice and Score questions evaluate the decision, opportunity type, fit, and reason. The UI displays Jev's confidence, measured API round-trip time, and per-post cost. If Jev does not return a billed cost, the UI estimates it from input-token usage at the public list price.
+The feed content is sample data, but every decision is produced by the real Jev API. The server sends the 15-post reel to Jev in three parallel batches, where typed Choice and Score questions evaluate the decision, opportunity type, fit, and reason. The UI displays Jev's confidence, measured API round-trip time, and run cost. If Jev does not return a billed cost, the UI estimates it from input-token usage at the public list price.
 
 A larger LLM can later generate personalized outreach only for strong `DM` matches.
 
@@ -115,7 +116,14 @@ app/
 ├── globals.css            # Complete visual system and responsive styles
 ├── layout.js              # Root layout and page metadata
 └── page.js                # Feed, goal selector, filters, and results UI
+extension/                 # JevvieScout Manifest V3 browser extension
 ```
+
+## JevvieScout extension
+
+JevvieScout reads posts and visible profile context directly from the rendered X page, then sends that text to this application's server-side Jev classifier. It does not use the X API or transmit the user's X session cookies.
+
+See [extension/README.md](extension/README.md) for installation and configuration steps.
 
 ## Classification response
 
