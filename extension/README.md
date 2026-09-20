@@ -35,7 +35,7 @@ Next.js server → TypeSafe Jev
 Isolated result overlay on each X post
 ```
 
-JevvieScout uses an intersection observer to process only posts that actually enter the viewport. It batches up to eight newly visible posts, animates each result from its on-page avatar into the correct scouting zone, and leaves a small verdict pill beneath the post. The dock includes an optional stats drawer with analyzed count, API timing, estimated cost, and model.
+JevvieScout uses an intersection observer to process only posts that actually enter the viewport. It batches up to eight newly visible posts, then serializes the results into a playful reel with three distinct mascot performances: a smiling DM cat rises while holding its sign, a curious Maybe cat peeks down, and a lazy Skip cat falls from above and lies across its sign. The profile then travels into the correct scouting zone. Nothing is inserted beneath the X post. The dock includes an optional stats drawer with analyzed count, API timing, estimated cost, and model.
 
 ## Production endpoint
 

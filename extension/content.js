@@ -9,6 +9,7 @@ const state = {
   processTimer: null,
   scanTimer: null,
   generation: 0,
+  visualUntil: 0,
   queue: new Map(),
   cache: new WeakMap(),
   observed: new WeakSet(),
@@ -77,7 +78,7 @@ function dockStyles() {
     .dock { width: min(520px, calc(100vw - 24px)); position: absolute; left: 50%; bottom: 13px; transform: translateX(-50%); border: 1px solid rgba(24,26,22,.16); border-radius: 19px; background: rgba(251,251,247,.94); box-shadow: 0 15px 45px rgba(25,28,22,.18); backdrop-filter: blur(18px); overflow: hidden; pointer-events: auto; transition: transform .3s ease, opacity .3s ease; }
     .dock.minimized { transform: translate(-50%, calc(100% - 43px)); opacity: .9; }
     .dock-head { height: 42px; padding: 0 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #e3e3dc; }
-    .logo { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; color: white; background: #191b17; font: italic 15px Georgia, serif; transform: rotate(-6deg); }
+    .logo { width: 29px; height: 29px; display: grid; place-items: center; border: 2px solid #171915; border-radius: 50%; background: #dfff68; font-size: 17px; transform: rotate(-6deg); }
     .brand { font: 700 10px/1 sans-serif; letter-spacing: -.01em; }.brand small { display: block; margin-top: 2px; color: #8b8e86; font: 500 7px/1 monospace; letter-spacing: .08em; }
     .status { margin-left: auto; display: flex; align-items: center; gap: 6px; color: #777b73; font: 500 8px/1 monospace; }.status i { width: 6px; height: 6px; border-radius: 50%; background: #239c69; box-shadow: 0 0 0 3px rgba(35,156,105,.12); }.status.thinking i { background: #3158e8; animation: pulse .55s infinite alternate; }
     .text-button { border: 0; background: transparent; color: #777b73; padding: 6px; font: 600 8px/1 monospace; cursor: pointer; }
@@ -92,15 +93,22 @@ function dockStyles() {
     .more { margin-left: 3px; color: #777b73; font: 600 8px/26px monospace; }
     .stats { display: none; grid-template-columns: repeat(4, 1fr); gap: 1px; border-top: 1px solid #e3e3dc; background: #e3e3dc; }.stats.open { display: grid; }
     .metric { padding: 9px; background: #fbfbf7; }.metric span { display: block; color: #959890; font: 500 7px/1 monospace; }.metric strong { display: block; margin-top: 4px; font: 600 10px/1 monospace; }
-    .toast { min-width: 265px; max-width: calc(100vw - 30px); position: absolute; left: 50%; bottom: 164px; transform: translate(-50%, 14px) scale(.9); display: flex; align-items: center; gap: 9px; padding: 9px 12px; border: 1px solid #deded7; border-radius: 99px; background: rgba(255,255,252,.97); box-shadow: 0 10px 30px rgba(25,28,22,.14); opacity: 0; animation: toast 1.65s ease both; }
-    .toast .avatar { width: 31px; height: 31px; flex: 0 0 auto; }.toast-copy { min-width: 0; }.toast-copy strong { display: block; font: 700 11px/1.1 sans-serif; }.toast-copy small { display: block; max-width: 195px; margin-top: 3px; color: #777b73; font: 500 8px/1.1 monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }.toast-emoji { margin-left: auto; font-size: 22px; }
-    .flying { width: 38px; height: 38px; position: absolute; left: var(--start-x); top: var(--start-y); display: grid; place-items: center; border: 3px solid white; border-radius: 50%; color: white; background: var(--avatar); box-shadow: 0 6px 18px rgba(0,0,0,.22); font: 700 9px/1 sans-serif; animation: fly .82s cubic-bezier(.42,0,.72,.25) both; }
+    .mascot-callout { width: min(390px, calc(100vw - 20px)); height: 270px; position: absolute; left: var(--post-x); top: var(--post-y); display: grid; place-items: center; opacity: 0; filter: drop-shadow(0 20px 25px rgba(20,23,18,.2)); }
+    .mascot-callout::before { content: ""; width: 360px; height: 235px; position: absolute; left: 50%; top: 54%; z-index: -1; transform: translate(-50%,-50%); border-radius: 50%; background: radial-gradient(ellipse, rgba(255,255,255,.96) 0 44%, rgba(255,255,255,.46) 61%, rgba(255,255,255,0) 75%); }
+    .mascot-callout.dm { animation: mascot-rise 2.35s cubic-bezier(.2,.9,.3,1) both; }.mascot-callout.maybe { animation: mascot-peek 2.35s cubic-bezier(.2,.9,.3,1) both; }.mascot-callout.skip { animation: mascot-drop 2.35s cubic-bezier(.2,.9,.3,1) both; }
+    .mascot-art { width: 280px; height: 270px; position: relative; }.mascot-art img { width: 100%; height: 100%; display: block; object-fit: contain; }
+    .mascot-sign { min-width: 150px; position: absolute; left: 50%; top: 52%; transform: translate(-50%,-50%); color: #171915; text-align: center; font: 950 38px/.9 sans-serif; letter-spacing: -.06em; text-transform: uppercase; text-shadow: 0 2px 0 white, 0 0 8px rgba(255,255,255,.95); -webkit-text-stroke: .35px currentColor; }
+    .mascot-callout.dm .mascot-sign { color: #087854; }.mascot-callout.maybe .mascot-sign { color: #9b5b00; }.mascot-callout.skip .mascot-art { width: 340px; }.mascot-callout.skip .mascot-sign { top: 67%; color: #696c66; font-size: 38px; }
+    .flying { width: 190px; height: 65px; padding: 7px 13px 7px 7px; position: absolute; left: var(--start-x); top: var(--start-y); display: flex; align-items: center; gap: 9px; border: 3px solid #171915; border-radius: 99px; color: #171915; background: white; box-shadow: 7px 8px 0 #171915; animation: fly-to-zone 1.02s 1.25s cubic-bezier(.38,0,.7,.24) both; }
+    .fly-avatar { width: 47px; height: 47px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; color: white; background: var(--avatar); font: 800 10px/1 sans-serif; }.fly-copy { min-width: 0; }.fly-copy strong { display: block; max-width: 105px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 11px/1.1 sans-serif; }.fly-copy small { display: block; margin-top: 4px; color: #777b73; font: 700 8px/1 monospace; }
     @keyframes pulse { to { opacity: .3; transform: scale(.7); } }
-    @keyframes fly { 0% { transform: translate(0,0) scale(.72); } 32% { transform: translate(calc(var(--dx) * .22), -42px) scale(1.15) rotate(-8deg); } 100% { transform: translate(var(--dx), var(--dy)) scale(.62) rotate(10deg); opacity: .18; } }
-    @keyframes toast { 0% { opacity: 0; transform: translate(-50%, 14px) scale(.9); } 15%,78% { opacity: 1; transform: translate(-50%, 0) scale(1); } 100% { opacity: 0; transform: translate(-50%, -9px) scale(.96); } }
+    @keyframes fly-to-zone { 0% { transform: translate(0,0) rotate(-5deg) scale(.72); opacity: 0; } 24% { transform: translate(calc(var(--dx) * .14), -42px) rotate(7deg) scale(1); opacity: 1; } 48% { transform: translate(calc(var(--dx) * .34), -24px) rotate(-4deg) scale(.9); } 100% { transform: translate(var(--dx), var(--dy)) rotate(12deg) scale(.28); opacity: .1; } }
+    @keyframes mascot-rise { 0% { opacity: 0; transform: translate(-50%, 190px) rotate(-5deg) scale(.65); } 8% { opacity: 1; transform: translate(-50%, -14px) rotate(3deg) scale(1.08); } 12%,78% { opacity: 1; transform: translate(-50%, 0) rotate(0) scale(1); } 100% { opacity: 0; transform: translate(-50%, 115px) rotate(5deg) scale(.8); } }
+    @keyframes mascot-peek { 0% { opacity: 0; transform: translate(-50%, -220px) rotate(10deg) scale(.7); } 8% { opacity: 1; transform: translate(-50%, 13px) rotate(-4deg) scale(1.05); } 12%,78% { opacity: 1; transform: translate(-50%, 0) rotate(0) scale(1); } 100% { opacity: 0; transform: translate(-50%, -120px) rotate(-6deg) scale(.78); } }
+    @keyframes mascot-drop { 0% { opacity: 0; transform: translate(-50%, -260px) rotate(-7deg) scale(.68); } 8% { opacity: 1; transform: translate(-50%, 17px) rotate(3deg) scale(1.06); } 12%,78% { opacity: 1; transform: translate(-50%, 0) rotate(0) scale(1); } 100% { opacity: 0; transform: translate(-50%, 75px) rotate(3deg) scale(.82); } }
     @keyframes land { from { opacity: 0; transform: translateY(-38px) scale(.4) rotate(12deg); } 70% { transform: translateY(4px) scale(1.12) rotate(-4deg); } }
-    @media (max-width: 620px) { .dock { bottom: 7px; }.brand small, .text-button { display: none; }.zones { gap: 4px; padding: 6px; }.zone { min-height: 74px; padding: 6px; }.zone-title span { display: none; }.toast { bottom: 146px; }.stats { grid-template-columns: repeat(2, 1fr); } }
-    @media (prefers-reduced-motion: reduce) { .flying { animation-duration: .01ms; }.toast, .mini-person { animation-duration: .01ms; } }
+    @media (max-width: 620px) { .dock { bottom: 7px; }.brand small, .text-button { display: none; }.zones { gap: 4px; padding: 6px; }.zone { min-height: 74px; padding: 6px; }.zone-title span { display: none; }.mascot-callout { width: 300px; height: 220px; }.mascot-art { width: 230px; height: 220px; }.mascot-callout.skip .mascot-art { width: 285px; }.mascot-sign { min-width: 120px; font-size: 27px; }.mascot-callout.skip .mascot-sign { font-size: 30px; }.stats { grid-template-columns: repeat(2, 1fr); }.flying { width: 160px; } }
+    @media (prefers-reduced-motion: reduce) { .flying, .mascot-callout, .speech, .mini-person { animation-duration: .01ms; } }
   `;
 }
 
@@ -117,8 +125,8 @@ function ensureDock() {
     <div class="world">
       <section class="dock">
         <div class="dock-head">
-          <span class="logo">J</span>
-          <span class="brand">JevvieScout<small>SCROLL. SPOT. SAY HELLO.</small></span>
+          <span class="logo">🐱</span>
+          <span class="brand">JevvieScout<small>CAT SCOUT MODE · v0.4.1</small></span>
           <span class="status"><i></i><span>watching the feed</span></span>
           <button class="text-button stats-toggle" type="button">STATS</button>
           <button class="minimize" type="button" aria-label="Minimize JevvieScout">−</button>
@@ -185,29 +193,31 @@ function renderPile(decision) {
   }
 }
 
-function showToast(post, result) {
+function showMascot(article, result) {
   const root = ensureDock();
   const effects = root.querySelector(".effects");
-  const toast = document.createElement("div");
-  const copy = result.decision === "DM" ? "DM them" : result.decision === "Maybe" ? "keep watching" : "let it pass";
-  const emoji = result.decision === "DM" ? "👋" : result.decision === "Maybe" ? "👀" : "💤";
-  toast.className = "toast";
-  toast.innerHTML = `<span class="avatar"></span><span class="toast-copy"><strong></strong><small></small></span><span class="toast-emoji"></span>`;
-  toast.querySelector(".avatar").style.setProperty("--avatar", hashColor(post.handle));
-  toast.querySelector(".avatar").textContent = post.initials;
-  toast.querySelector("strong").textContent = `${post.name} — ${copy}`;
-  toast.querySelector("small").textContent = `${result.opportunity} · ${result.confidence}%`;
-  toast.querySelector(".toast-emoji").textContent = emoji;
-  effects.appendChild(toast);
-  setTimeout(() => toast.remove(), 1700);
+  const callout = document.createElement("div");
+  const postRect = article.getBoundingClientRect();
+  const horizontalMargin = Math.min(220, window.innerWidth / 2 - 10);
+  const targetX = Math.max(horizontalMargin, Math.min(window.innerWidth - horizontalMargin, postRect.left + postRect.width / 2));
+  const targetY = Math.max(35, Math.min(window.innerHeight - 310, postRect.top + 5));
+  const asset = result.decision === "DM" ? "jev-cat-dm.png" : result.decision === "Maybe" ? "jev-cat-maybe.png" : "jev-cat-skip.png";
+  const copy = result.decision === "DM" ? "DM 👋" : result.decision === "Maybe" ? "MAYBE 👀" : "SKIP 💤";
+  callout.className = `mascot-callout ${result.decision.toLowerCase()}`;
+  callout.style.setProperty("--post-x", `${targetX}px`);
+  callout.style.setProperty("--post-y", `${targetY}px`);
+  callout.innerHTML = `<div class="mascot-art"><img alt="" /><strong class="mascot-sign"></strong></div>`;
+  callout.querySelector("img").src = chrome.runtime.getURL(`assets/${asset}`);
+  callout.querySelector(".mascot-sign").textContent = copy;
+  effects.appendChild(callout);
+  setTimeout(() => callout.remove(), 2370);
 }
 
-function articleAvatarRect(article) {
-  const avatar = article.querySelector('[data-testid^="UserAvatar-"]') || article.querySelector('[data-testid="Tweet-User-Avatar"]') || article;
-  const rect = avatar.getBoundingClientRect();
+function articleCardStart(article) {
+  const rect = article.getBoundingClientRect();
   return {
-    x: Math.max(10, Math.min(window.innerWidth - 48, rect.left + rect.width / 2 - 19)),
-    y: Math.max(10, Math.min(window.innerHeight - 48, rect.top + rect.height / 2 - 19)),
+    x: Math.max(10, Math.min(window.innerWidth - 200, rect.left + Math.min(60, rect.width * .08))),
+    y: Math.max(12, Math.min(window.innerHeight - 78, rect.top + 35)),
   };
 }
 
@@ -216,19 +226,23 @@ function animateToZone(article, post, result, generation) {
   const root = ensureDock();
   const effects = root.querySelector(".effects");
   const destination = root.querySelector(`[data-zone="${result.decision}"] .pile`).getBoundingClientRect();
-  const start = articleAvatarRect(article);
-  const targetX = destination.left + destination.width / 2 - 19;
-  const targetY = destination.top + destination.height / 2 - 19;
+  const start = articleCardStart(article);
+  const startX = start.x;
+  const startY = start.y;
+  const targetX = destination.left + destination.width / 2 - 95;
+  const targetY = destination.top + destination.height / 2 - 32;
   const flyer = document.createElement("div");
   flyer.className = "flying";
-  flyer.textContent = post.initials;
-  flyer.style.setProperty("--avatar", hashColor(post.handle));
-  flyer.style.setProperty("--start-x", `${start.x}px`);
-  flyer.style.setProperty("--start-y", `${start.y}px`);
-  flyer.style.setProperty("--dx", `${targetX - start.x}px`);
-  flyer.style.setProperty("--dy", `${targetY - start.y}px`);
+  flyer.innerHTML = `<span class="fly-avatar"></span><span class="fly-copy"><strong></strong><small>INCOMING SIGNAL</small></span>`;
+  flyer.querySelector(".fly-avatar").style.setProperty("--avatar", hashColor(post.handle));
+  flyer.querySelector(".fly-avatar").textContent = post.initials;
+  flyer.querySelector("strong").textContent = post.name;
+  flyer.style.setProperty("--start-x", `${startX}px`);
+  flyer.style.setProperty("--start-y", `${startY}px`);
+  flyer.style.setProperty("--dx", `${targetX - startX}px`);
+  flyer.style.setProperty("--dy", `${targetY - startY}px`);
   effects.appendChild(flyer);
-  showToast(post, result);
+  showMascot(article, result);
 
   setTimeout(() => {
     flyer.remove();
@@ -238,45 +252,7 @@ function animateToZone(article, post, result, generation) {
     state.analyzed += 1;
     renderPile(result.decision);
     updateDockStats();
-  }, 820);
-}
-
-function inlineStyles() {
-  return `
-    :host { all: initial; }
-    .pill { width: max-content; margin: 8px 0 2px; padding: 5px 8px; display: flex; align-items: center; gap: 6px; border-radius: 99px; font: 600 10px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; animation: arrive .3s cubic-bezier(.2,1.5,.4,1); }
-    .pill.dm { color: #087854; background: #e0f2e8; }.pill.maybe { color: #955700; background: #f7ead1; }.pill.skip { color: #676a64; background: #e9e9e5; }
-    .pill small { opacity: .72; font: 500 8px/1 monospace; }.dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-    .loading { color: #73776f; background: #f0f0eb; }.loading .dot { background: #3158e8; animation: pulse .6s infinite alternate; }
-    @keyframes arrive { from { opacity: 0; transform: translateY(-5px) scale(.85); } } @keyframes pulse { to { opacity: .25; transform: scale(.6); } }
-  `;
-}
-
-function inlineHost(article) {
-  let host = article.querySelector(`:scope [${INLINE_ATTRIBUTE}]`);
-  if (host) return host.shadowRoot;
-  host = document.createElement("span");
-  host.setAttribute(INLINE_ATTRIBUTE, "");
-  const textNode = article.querySelector('[data-testid="tweetText"]');
-  (textNode?.parentElement || article).appendChild(host);
-  return host.attachShadow({ mode: "open" });
-}
-
-function renderInlineLoading(article) {
-  inlineHost(article).innerHTML = `<style>${inlineStyles()}</style><div class="pill loading"><span class="dot"></span>Jevvie is scouting…</div>`;
-}
-
-function renderInlineResult(article, result) {
-  const root = inlineHost(article);
-  const decision = result.decision.toLowerCase();
-  const emoji = result.decision === "DM" ? "👋" : result.decision === "Maybe" ? "👀" : "💤";
-  root.innerHTML = `<style>${inlineStyles()}</style><div class="pill ${decision}"><span>${emoji}</span><strong></strong><small></small></div>`;
-  root.querySelector("strong").textContent = result.decision;
-  root.querySelector("small").textContent = `${result.opportunity} · ${result.confidence}%`;
-}
-
-function renderInlineError(article) {
-  inlineHost(article).innerHTML = `<style>${inlineStyles()}</style><div class="pill skip"><span>↻</span><strong>Jev unavailable</strong></div>`;
+  }, 2330);
 }
 
 function queueArticle(article) {
@@ -287,7 +263,6 @@ function queueArticle(article) {
   if (state.cache.get(article) === nextFingerprint) return;
   state.cache.set(article, nextFingerprint);
   state.queue.set(article, post);
-  renderInlineLoading(article);
   setDockStatus(`reading ${state.queue.size} signal${state.queue.size === 1 ? "" : "s"}`, true);
   scheduleProcess();
 }
@@ -318,6 +293,17 @@ function scheduleProcess(delay = 420) {
   state.processTimer = setTimeout(processQueue, delay);
 }
 
+function scheduleVisual(article, post, result, generation) {
+  const now = Date.now();
+  const startsAt = Math.max(now, state.visualUntil);
+  const delay = startsAt - now;
+  state.visualUntil = startsAt + 2350;
+  setTimeout(() => {
+    if (generation !== state.generation || !article.isConnected) return;
+    animateToZone(article, post, result, generation);
+  }, delay);
+}
+
 async function processQueue() {
   if (!state.enabled || state.busy || state.queue.size === 0) return;
   state.busy = true;
@@ -343,15 +329,10 @@ async function processQueue() {
 
     batch.forEach(([article, post], index) => {
       const result = response.data.results[index];
-      setTimeout(() => {
-        if (!article.isConnected || generation !== state.generation) return;
-        renderInlineResult(article, result);
-        animateToZone(article, post, result, generation);
-      }, index * 230);
+      scheduleVisual(article, post, result, generation);
     });
     setDockStatus("watching the feed");
   } catch {
-    batch.forEach(([article]) => { if (article.isConnected) renderInlineError(article); });
     setDockStatus("Jev needs a retry");
   } finally {
     state.busy = false;
@@ -361,6 +342,7 @@ async function processQueue() {
 
 function resetScout() {
   state.generation += 1;
+  state.visualUntil = 0;
   clearTimeout(state.processTimer);
   clearTimeout(state.scanTimer);
   state.queue.clear();
@@ -411,6 +393,7 @@ const pageObserver = new MutationObserver(() => {
 });
 
 async function start() {
+  document.querySelectorAll(`[${INLINE_ATTRIBUTE}]`).forEach((node) => node.remove());
   const settings = await chrome.storage.sync.get(DEFAULTS);
   state.enabled = settings.enabled;
   state.goal = settings.goal;
